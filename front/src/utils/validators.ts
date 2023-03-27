@@ -37,7 +37,7 @@ export const passwordValidator = (value: string) => {
         return 'Пароль должен содержать символы'
 
 
-    const minMaxValid = minMaxValidator(value, 6, 32)
+    const minMaxValid = minMaxValidator(value, 8, 32)
     if (minMaxValid)
         return minMaxValid
 

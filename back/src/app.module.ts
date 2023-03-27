@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/user.entity';
 import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
+import { UsersModule } from './users/users.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -14,12 +16,13 @@ import { UsersService } from './users/users.service';
       username: 'root',
       charset: 'utf8mb4_unicode_ci',
       password: '',
-      database: 'NextNestReg',
+      database: 'nextnestreg',
       entities: [User],
       synchronize: true,
     }),
+    UsersModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService]
 })
 export class AppModule { }
