@@ -1,6 +1,6 @@
 import {
     IsNotEmpty, IsString, IsEmail,
-    MinLength, MaxLength, Matches
+    MinLength, MaxLength, IsStrongPassword, Equals, Matches
 } from 'class-validator'
 
 export class CreateUserDto {
@@ -10,7 +10,6 @@ export class CreateUserDto {
     @MaxLength(16)
     login: string;
 
-    @IsNotEmpty()
     @IsEmail()
     @MinLength(5)
     @MaxLength(32)
@@ -18,11 +17,15 @@ export class CreateUserDto {
 
     @IsNotEmpty()
     @IsString()
-    @Matches(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$/) // A-Z a-z 0-9 !@#$%^&* min: 8 max: 32
+    // @Matches(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$/) // A-Z a-z 0-9 !@#$%^&* min: 8 max: 32
+    @IsStrongPassword()
     password: string;
 
     @IsNotEmpty()
     @IsString()
-    @Matches(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$/) // A-Z a-z 0-9 !@#$%^&* min: 8 max: 32
+    // @IsStrongPassword()
+    // @Matches(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$/) // A-Z a-z 0-9 !@#$%^&* min: 8 max: 32
+    // @Matches('password')
+
     passwordConfirmation: string;
 }
