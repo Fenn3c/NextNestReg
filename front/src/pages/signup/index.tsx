@@ -1,17 +1,21 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
 import Link from '../../components/Link'
 import useInput from '../../hooks/useInput'
 import { loginValidator, passwordValidator, emailValidator } from '../../utils/validators'
 import ReCaptcha from '../../components/ReCaptcha'
+import axios from 'axios'
 
 
 
 
 export default function () {
 
-    // a => methids
+    const [loginBusy, setLoginBusy] = useState(false)
+    const [serverError, setServerError] = useState(false)
+
+
     const [
         loginValue,
         loginError,
@@ -43,6 +47,18 @@ export default function () {
     ] = useInput(passwordValidator)
 
 
+    useEffect(() => {
+        if (!loginError) {
+            axios.post('/users/login-exists', { "login": loginValue }).then((res) => {
+                console.log(res.data)
+                setLoginBusy(res.data.userExists)
+                return
+            }).catch(e => console.error(e))
+        }
+    }, [loginValue,loginError])
+
+    const loginBusyErrorMessage = loginBusy ? ' Логин занят' : ''
+
     const passwordsNotEqual = passwordValue !== passwordReapeatValue
 
     const buttonActive =
@@ -59,6 +75,7 @@ export default function () {
                 <h1 className='text-4xl font-bold text-center mb-2'>Регистрация</h1>
                 <p className='text-center mb-6 text-slate-400'>Создайте аккаунт. <Link text='Уже есть аккаунт?' /></p>
                 <div className='bg-white rounded-xl shadow py-8 px-10'>
+                    <p className='text-red-500 text-center'>ошибка сервера</p>
                     <Input
                         value={loginValue}
                         onChange={loginHandler}
@@ -66,8 +83,8 @@ export default function () {
                         label="Логин"
                         placeholder='Логин'
                         required
-                        errorText={loginError}
-                        invalid={Boolean(loginError) && loginDirty}
+                        errorText={loginError + loginBusyErrorMessage}
+                        invalid={(Boolean(loginError) || loginBusy) && loginDirty}
                     />
                     <Input
                         value={emailValue}

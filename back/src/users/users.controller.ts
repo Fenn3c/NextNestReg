@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, HttpException, HttpStatus, Res, Req } from
 import { Response, Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { LoginExistsDto } from './dto/login-exists.dto';
 import { User } from './user.entity';
 import { UsersService } from './users.service';
 
@@ -28,6 +29,12 @@ export class UsersController {
     return { accessToken: tokens.accessToken }
   }
 
+  @Post('/login-exists')
+  async loginExists(@Body() loginExistsData: LoginExistsDto){
+    return{
+      "userExists":
+      Boolean(await this.userService.findByLogin(loginExistsData.login))}
+  }
 
   @Get('/refresh')
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
