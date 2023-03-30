@@ -14,6 +14,7 @@ export class User {
   @Column()
   password: string;
 
-  @Column()
-  refreshToken: string;
+  @Column({default: null})
+  refreshToken?: string;
+
 }

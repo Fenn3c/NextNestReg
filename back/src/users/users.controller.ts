@@ -1,17 +1,14 @@
-import { Controller, Post, Get, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, HttpException, HttpStatus, Res, Req } from '@nestjs/common';
+import { Response, Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { User } from './user.entity';
 import { UsersService } from './users.service';
-import { JwtService } from '@nestjs/jwt';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
+
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly userService: UsersService,
-              private readonly jwtService: JwtService
-              )
-               { }
+  constructor(private readonly userService: UsersService) { }
 
 
   @Get()
@@ -25,15 +22,24 @@ export class UsersController {
   }
 
   @Post('/login')
-  async login(@Body() userData: LoginUserDto) {
-    return this.userService.login(userData);
+  async login(@Body() userData: LoginUserDto, @Res({ passthrough: true }) res: Response) {
+    const tokens = await this.userService.login(userData);
+    res.cookie('refreshToken', tokens.refreshToken, { maxAge: 600_000, httpOnly: true })
+    return { accessToken: tokens.accessToken }
   }
+
 
   @Get('/refresh')
-  async refresh(@Body() refreshTokenDto: RefreshTokenDto){
-    return this.userService.refreshToken(refreshTokenDto);
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const { refreshToken } = req.cookies as { refreshToken?: string }
+    if (!refreshToken)
+      throw new HttpException('Не указан refresh token', HttpStatus.UNAUTHORIZED)
+    try {
+      const tokens = await this.userService.refreshToken(refreshToken)
+      res.cookie('refreshToken', tokens.refreshToken, { maxAge: 600_000, httpOnly: true })
+      return { accessToken: tokens.accessToken }
+    } catch (err) {
+      throw new HttpException('Ошибка обновления токена', HttpStatus.UNAUTHORIZED)
+    }
   }
-
-
-
 }
