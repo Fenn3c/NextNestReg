@@ -5,6 +5,7 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { LoginExistsDto } from './dto/login-exists.dto';
 import { User } from './user.entity';
 import { UsersService } from './users.service';
+import { EmailExistsDto } from './dto/email-exists.dto';
 
 
 @Controller('users')
@@ -34,6 +35,14 @@ export class UsersController {
     return{
       "userExists":
       Boolean(await this.userService.findByLogin(loginExistsData.login))}
+  }
+
+
+  @Post('/email-exists')
+  async emailExists(@Body() emailExistsData: EmailExistsDto){
+    return{
+      "emailExists":
+      Boolean(await this.userService.findByEmail(emailExistsData.email))}
   }
 
   @Get('/refresh')

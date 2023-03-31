@@ -6,14 +6,30 @@ import useInput from '../../hooks/useInput'
 import { loginValidator, passwordValidator, emailValidator } from '../../utils/validators'
 import ReCaptcha from '../../components/ReCaptcha'
 import axios from 'axios'
+import { useLazyInput } from '@/hooks/useLazyInput'
 
 
+
+function debounce<F extends (...args: any[]) => void>(f: F, ms: number): (...args: Parameters<F>) => void {
+    let isCooldown = false;
+    return function (this: any, ...args: Parameters<F>) {
+        if (isCooldown) return;
+
+        f.apply(this, args);
+
+        isCooldown = true;
+
+        setTimeout(() => isCooldown = false, ms);
+    };
+}
 
 
 export default function () {
 
-    const [loginBusy, setLoginBusy] = useState(false)
+    const [loginExists, setLoginExists] = useState(false)
+    const [emailExists, setEmailExists] = useState(false)
     const [serverError, setServerError] = useState(false)
+    const [buttonLoading, setButtonLoading] = useState(false)
 
 
     const [
@@ -47,17 +63,66 @@ export default function () {
     ] = useInput(passwordValidator)
 
 
+
+    useLazyInput({
+        callback: () => {
+            if (!loginError) {
+                setButtonLoading(true)
+                axios.post('/users/login-exists', { "login": loginValue }).then((res) => {
+                    console.log(res.data)
+                    setLoginExists(res.data.userExists)
+                }).catch(e => console.error(e)).finally(() => setButtonLoading(false))
+            } else {
+                setLoginExists(false)
+            }
+        },
+        dependenciesArray: [loginValue, loginError]
+    })
+
+    useLazyInput({
+        callback: () => {
+            if (!emailError) {
+                setButtonLoading(true)
+                axios.post('/users/email-exists', { "email": emailValue }).then((res) => {
+                    console.log(res.data)
+                    setEmailExists(res.data.emailExists)
+                }).catch(e => console.error(e)).finally(() => setButtonLoading(false))
+            } else {
+                setEmailExists(false)
+            }
+        },
+        dependenciesArray: [emailValue, emailError]
+    })
+
     useEffect(() => {
         if (!loginError) {
-            axios.post('/users/login-exists', { "login": loginValue }).then((res) => {
-                console.log(res.data)
-                setLoginBusy(res.data.userExists)
-                return
-            }).catch(e => console.error(e))
+            setButtonLoading(true)
+        } else {
+            setButtonLoading(false)
         }
-    }, [loginValue,loginError])
+    }, [loginValue, loginError])
 
-    const loginBusyErrorMessage = loginBusy ? ' Логин занят' : ''
+
+    useEffect(() => {
+        if (!emailError) {
+            setButtonLoading(true)
+        } else {
+            setButtonLoading(false)
+        }
+    }, [emailValue, emailError])
+
+
+    const loginErrorMessage = [
+        loginError,
+        loginExists ? ' Такой логин уже занят' : ''] // собираем все ошибки в массив. Но здесь не обязательно тк никогда не будет 2 ошибки одновременно
+
+    
+        const emailErrorMessage = [
+            emailError,
+            emailExists ? 'Такая почта уже занята' : ''] 
+
+
+
 
     const passwordsNotEqual = passwordValue !== passwordReapeatValue
 
@@ -67,6 +132,8 @@ export default function () {
         && !Boolean(passwordError)
         && !Boolean(passwordReapeatError)
         && !passwordsNotEqual
+        && !emailExists
+        && !loginExists
 
 
     return (
@@ -83,14 +150,14 @@ export default function () {
                         label="Логин"
                         placeholder='Логин'
                         required
-                        errorText={loginError + loginBusyErrorMessage}
-                        invalid={(Boolean(loginError) || loginBusy) && loginDirty}
+                        errorText={loginErrorMessage.join(' ')}
+                        invalid={(Boolean(loginError) || loginExists) && loginDirty}
                     />
                     <Input
                         value={emailValue}
                         onChange={emailHandler}
-                        errorText={emailError}
-                        invalid={Boolean(emailError) && emailDirty}
+                        errorText={emailErrorMessage.join(' ')}
+                        invalid={(Boolean(emailError) || emailExists) && emailDirty}
                         id="email"
                         label="Почта"
                         placeholder='Почта'
@@ -125,7 +192,7 @@ export default function () {
                             onTokenFailed={() => console.warn('Токен не пришел')}
                             sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY ?? 'InvalidKey'} /> */}
                     </div>
-                    <Button className='w-full mt-4 mb-4' disabled={!buttonActive}>Зарегистрироваться</Button>
+                    <Button className='w-full mt-4 mb-4' disabled={!buttonActive} loading={buttonLoading}>Зарегистрироваться</Button>
                     <div className='text-slate-400 flex items-center text-center whitespace-nowrap mb-4
                     before:content-[""]
                     before:w-full

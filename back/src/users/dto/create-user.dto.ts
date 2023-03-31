@@ -17,15 +17,16 @@ export class CreateUserDto {
 
     @IsNotEmpty()
     @IsString()
-    // @Matches(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$/) // A-Z a-z 0-9 !@#$%^&* min: 8 max: 32
-    @IsStrongPassword()
+    @IsStrongPassword({
+        minLength: 8,
+        minLowercase: 1,
+        minNumbers: 1,
+        minSymbols: 1,
+        minUppercase: 1
+    })
     password: string;
 
     @IsNotEmpty()
     @IsString()
-    // @IsStrongPassword()
-    // @Matches(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,32}$/) // A-Z a-z 0-9 !@#$%^&* min: 8 max: 32
-    // @Matches('password')
-
     passwordConfirmation: string;
 }
