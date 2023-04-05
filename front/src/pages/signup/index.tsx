@@ -22,7 +22,7 @@ const loginBlockClasses = `
         after:bg-slate-400
         after:ml-2
 `
-const getFirstError = (err:string[]) =>{
+const getFirstError = (err: string[]) => {
     return err.length > 0 ? err[0] : ''
 }
 
@@ -33,37 +33,61 @@ export default function () {
     const [serverError, setServerError] = useState(false)
     // const [buttonLoading, setButtonLoading] = useState(false)
 
-    const getLogin = async (): Promise<string|undefined> => {
-        // setButtonLoading(true)
-        const {data} = await axios.post<{userExists: string}>('/users/login-exists', { "login": loginValue })
-        setLoginExists(Boolean(data.userExists))
-        return data.userExists
-    }
+    // const getLogin = async (): Promise<string|undefined> => {
+    //     const {data} = await axios.post<{userExists: string}>('/users/login-exists', { "login": loginValue })
+    //     if(data.userExists)
+    //         return 'Такой пользователь уже существует'
+    // }
 
-    const getEmail = async (): Promise<string|undefined> => {
-        // setButtonLoading(true)
-        const {data} = await axios.post<{userExists: string | undefined}>('/users/email-exists', { "email": emailValue })
-        setLoginExists(Boolean(data.userExists))
-        return data.userExists
-    }
+    // const getEmail = async (): Promise<string|undefined> => {
+    //     const {data} = await axios.post<{emailExists: boolean}>('/users/email-exists', { "email": emailValue })
+    //     if(data.emailExists)
+    //         return 'Такая почта уже существует'
+    // }
 
-    
+
     const [
         loginValue,
         loginError,
         loginDirty,
         loginLoading,
         loginHandler
-    ] = useInput(generateUseInputSettings([loginValidator],[getLogin], DELAY))
-    
+    ] = useInput({
+        validators: [ // синхронные валидаторы
+            loginValidator
+        ],
+        asyncValidators: [
+            async (value: string) => {
+                const {data} = await axios.post<{userExists: boolean}>('/users/login-exists', { "login": value })
+                console.log(data)
+                if (data.userExists)
+                    return 'Логин занят'
+            }
+        ],
+        lazyInputDelay: DELAY
+    })
+
     const [
         emailValue,
         emailError,
         emailDirty,
         emailLoading,
         emailHandler
-    ] = useInput(generateUseInputSettings([emailValidator],[getEmail], DELAY))
-   
+    ] = useInput({
+        validators: [ // синхронные валидаторы
+            emailValidator
+        ],
+        asyncValidators: [
+            async (value: string) => {
+                const {data} = await axios.post<{emailExists: boolean}>('/users/email-exists', { "email": value })
+                console.log(data)
+                if (data.emailExists)
+                    return 'Почта занята'
+            }
+        ],
+        lazyInputDelay: DELAY
+    })
+
 
     const [
         passwordValue,
@@ -71,8 +95,8 @@ export default function () {
         passwordDirty,
         passwordLoading,
         passwordHandler
-    ] = useInput(generateUseInputSettings([passwordValidator], [] , DELAY))
-  
+    ] = useInput(generateUseInputSettings([passwordValidator], [], DELAY))
+
 
     const [
         passwordReapeatValue,
@@ -82,7 +106,7 @@ export default function () {
         passwordReapeatHandler
     ] = useInput(generateUseInputSettings([passwordValidator], [], DELAY))
 
-    const isLoading = loginLoading  || emailLoading;
+    const isLoading = loginLoading || emailLoading;
     const passwordsNotEqual = passwordValue !== passwordReapeatValue
     const buttonActive =
         !Boolean(loginError.join(' '))
@@ -100,7 +124,7 @@ export default function () {
                     Регистрация
                 </h1>
                 <p className='text-center mb-6 text-slate-400'>
-                    Создайте аккаунт. 
+                    Создайте аккаунт.
                     <Link text='Уже есть аккаунт?' />
                 </p>
                 <div className='bg-white rounded-xl shadow py-8 px-10'>
@@ -115,13 +139,13 @@ export default function () {
                         placeholder='Логин'
                         required
                         errorText={getFirstError(loginError)}
-                        invalid={(Boolean(loginError[0]) || loginExists) && loginDirty}
+                        invalid={Boolean(loginError.length) && loginDirty}
                     />
                     <Input
                         value={emailValue}
                         onChange={emailHandler}
-                        errorText={emailError.join(' ')}
-                        invalid={(Boolean(emailError[0]) || emailExists) && emailDirty}
+                        errorText={getFirstError(emailError)}
+                        invalid={Boolean(emailError.length) && emailDirty}
                         id="email"
                         label="Почта"
                         placeholder='Почта'
@@ -156,9 +180,9 @@ export default function () {
                             onTokenFailed={() => console.warn('Токен не пришел')}
                             sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY ?? 'InvalidKey'} /> */}
                     </div>
-                    <Button className='w-full mt-4 mb-4' 
-                        disabled={!buttonActive}  
-                        loading={isLoading} 
+                    <Button className='w-full mt-4 mb-4'
+                        disabled={!buttonActive}
+                        loading={isLoading}
                     >
                         Зарегистрироваться
                     </Button>

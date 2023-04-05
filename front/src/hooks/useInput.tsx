@@ -4,13 +4,13 @@ type UseInputSettings = {
     validators: ((value: string) => string | undefined)[],
     asyncValidators: ((value: string) => Promise<string | undefined>)[],
     lazyInputDelay?: number
-    
+
 }
 export const generateUseInputSettings = (
-    validators?: UseInputSettings['validators'], 
-    asyncValidators?: UseInputSettings['asyncValidators'], 
+    validators?: UseInputSettings['validators'],
+    asyncValidators?: UseInputSettings['asyncValidators'],
     lazyInputDelay?: UseInputSettings['lazyInputDelay']
-    ): UseInputSettings => ({
+): UseInputSettings => ({
     validators: validators ?? [],
     asyncValidators: asyncValidators ?? [],
     lazyInputDelay: lazyInputDelay ?? 200
@@ -77,7 +77,6 @@ export default function useInput(
             return validationErrors
         }
 
-
         const timeout = setTimeout(async () => {
             const asyncValidationErrors = await asyncValidate(value)
             if (asyncValidationErrors.length) {
@@ -94,7 +93,7 @@ export default function useInput(
             setLoading(false)
         }
 
-    }, [value, errors, asyncValidators, lazyInputDelay, dirty])
+    }, [value])
 
 
     return [value, errors, dirty, loading, handler];
