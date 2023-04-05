@@ -25,16 +25,16 @@ export const loginValidator = (value: string) => {
 
 export const passwordValidator = (value: string) => {
     if (!value.match(/(?=.*[0-9])/))
-        return 'Пароль должен содержать цифры'
+        return 'Нет цифр'
 
     if (!value.match(/(?=.*[a-z])/))
-        return 'Пароль должен содержать строчные буквы'
+        return 'Нет строчных букв'
 
     if (!value.match(/(?=.*[A-Z])/))
-        return 'Пароль должен содержать заглавные буквы'
+        return 'Нет заглавных букв'
 
-    if (!value.match(/(?=.*[!@#$%^&*])/))
-        return 'Пароль должен содержать символы'
+    if (!value.match(/(?=.*[!@#$%^&*-])/))
+        return 'Нет символов'
 
 
     const minMaxValid = minMaxValidator(value, 8, 32)

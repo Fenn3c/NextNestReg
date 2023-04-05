@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
-import { loginValidator, passwordValidator, emailValidator } from '../../utils/validators'
+import { loginValidator, passwordValidator, emailValidator, emptyValidator } from '../../utils/validators'
 import useInput, { generateUseInputSettings } from '../../hooks/useInput'
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
-import { register } from '@/apiMethods/user'
+import { login, register } from '@/apiMethods/user'
 import A from '@/components/Link'
 import { redirect, useRouter } from 'next/navigation'
-
 
 export const DELAY = 500;
 const loginBlockClasses = `
@@ -34,27 +33,6 @@ export default function () {
     const [serverError, setServerError] = useState<string>('')
 
     const [
-        loginValue,
-        loginError,
-        loginDirty,
-        loginLoading,
-        loginHandler
-    ] = useInput({
-        validators: [ // синхронные валидаторы
-            loginValidator
-        ],
-        asyncValidators: [
-            async (value: string) => {
-                const { data } = await axios.post<{ userExists: boolean }>('/users/login-exists', { "login": value })
-                console.log(data)
-                if (data.userExists)
-                    return 'Логин занят'
-            }
-        ],
-        lazyInputDelay: DELAY
-    })
-
-    const [
         emailValue,
         emailError,
         emailDirty,
@@ -64,14 +42,7 @@ export default function () {
         validators: [ // синхронные валидаторы
             emailValidator
         ],
-        asyncValidators: [
-            async (value: string) => {
-                const { data } = await axios.post<{ emailExists: boolean }>('/users/email-exists', { "email": value })
-                console.log(data)
-                if (data.emailExists)
-                    return 'Почта занята'
-            }
-        ],
+        asyncValidators: [],
         lazyInputDelay: DELAY
     })
 
@@ -82,53 +53,44 @@ export default function () {
         passwordDirty,
         passwordLoading,
         passwordHandler
-    ] = useInput(generateUseInputSettings([passwordValidator], [], DELAY))
+    ] = useInput(generateUseInputSettings([emptyValidator], [], DELAY))
 
 
-    const [
-        passwordReapeatValue,
-        passwordReapeatError,
-        passwordReapeatDirty,
-        passwordRepeatLoading,
-        passwordReapeatHandler
-    ] = useInput(generateUseInputSettings([passwordValidator], [], DELAY))
 
-    const isLoading = loginLoading || emailLoading || formLoading;
-    const passwordsEqual = passwordValue === passwordReapeatValue
-
-
-    const formDirty = loginDirty || emailDirty || passwordDirty || passwordReapeatDirty
+    const isLoading = formLoading;
 
     const buttonActive =
-        !Boolean(loginError.length)
-        && !Boolean(emailError.length)
+        !Boolean(emailError.length)
         && !Boolean(passwordError.length)
-        && !Boolean(passwordReapeatError.length)
-        && passwordsEqual
-        && formDirty
+
+
 
     const submitHandler = async () => {
         setFormLoading(true)
         try {
-            const result = await register(loginValue, emailValue, passwordValue, passwordReapeatValue)
+            const { data } = await login(emailValue, passwordValue)
+            console.log(data)
+            localStorage.setItem('accessToken', data.accessToken)
             setFormLoading(false)
             const { push } = useRouter()
-            push('/signin')
-
-        } catch (e) {
-            setServerError('Ошибка сервера. Обновите страницу.')
-            setFormLoading(false)
+            push('/')
+        } catch (e: unknown) {
+            if (e instanceof AxiosError) {
+                // console.log(e.response?.data.message[0])
+                setServerError(e.response?.data.message)
+                setFormLoading(false)
+            }
         }
     }
     return (
         <div className='bg-slate-100 w-full h-screen flex justify-center items-center'>
             <div className=''>
                 <h1 className='text-4xl font-bold text-center mb-2'>
-                    Регистрация
+                    Вход
                 </h1>
                 <p className='text-center mb-6 text-slate-400'>
-                    Создайте аккаунт.
-                    <A text=' Уже есть аккаунт?' href='/signin' />
+                    Войдите в аккаунт.
+                    <A text=' Еще нет аккаунта?' href='/signup' />
                 </p>
                 <div className='bg-white rounded-xl shadow py-8 px-10 w-[468px]'>
                     {serverError &&
@@ -136,18 +98,7 @@ export default function () {
                             {serverError}
                         </p>}
                     <div className={formLoading ? 'opacity-50 pointer-events-none' : ''}>
-                        <Input
-                            value={loginValue}
-                            onChange={loginHandler}
-                            id="login"
-                            label="Логин"
-                            placeholder='Логин'
-                            required
-                            errorText={getFirstError(loginError)}
-                            invalid={Boolean(loginError.length) && loginDirty}
-                            loading={loginLoading}
-                            disabled={formLoading}
-                        />
+
                         <Input
                             value={emailValue}
                             onChange={emailHandler}
@@ -174,20 +125,6 @@ export default function () {
                             disabled={formLoading}
 
                         />
-                        <Input
-                            value={passwordReapeatValue}
-                            onChange={passwordReapeatHandler}
-                            // Выводим только проверку совпадения, чтобы не дублировать ошибки из пароля
-                            errorText={!passwordsEqual ? 'Пароли не совпадают' : ''}
-                            invalid={(Boolean(passwordReapeatError.join(' ')) || !passwordsEqual) && passwordReapeatDirty}
-                            id="repeat-password"
-                            label="Повторите пароль"
-                            placeholder='Повторите пароль'
-                            type='password'
-
-                            disabled={formLoading}
-
-                        />
                     </div>
 
                     <div className='flex justify-center'>
@@ -201,7 +138,7 @@ export default function () {
                         loading={isLoading}
                         onClick={submitHandler}
                     >
-                        Зарегистрироваться
+                        Войти
                     </Button>
                     <div className={loginBlockClasses}>
                         Войти с помощью

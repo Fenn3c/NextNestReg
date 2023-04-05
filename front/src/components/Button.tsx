@@ -5,11 +5,14 @@ type Props = {
     className?: string
     loading?: boolean
     disabled?: boolean
+    onClick?: React.MouseEventHandler<HTMLButtonElement>
 }
 
-export default function Button({ children, loading = false, disabled = false, className }: Props) {
+export default function Button({ children, loading = false, disabled = false, className, onClick = undefined }: Props) {
     return (
-        <button className={`px-4 py-2 bg-blue-500 hover:bg-blue-600 focus:bg-blue-600 flex justify-center items-center
+        <button
+            onClick={onClick}
+            className={`px-4 py-2 bg-blue-500 hover:bg-blue-600 focus:bg-blue-600 flex justify-center items-center
          text-white font-medium rounded-lg transition-colors outline-none shadow-sm 
          disabled:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed
          ${className ? className : ''}`} disabled={disabled || loading}>

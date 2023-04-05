@@ -4,11 +4,8 @@ import {
 } from 'class-validator'
 
 export class LoginUserDto{
-    @IsNotEmpty()
-    @IsString()
-    @MinLength(5)
-    @MaxLength(16)
-    login: string;
+    @IsEmail()
+    email: string;
 
     @IsNotEmpty()
     @IsString()

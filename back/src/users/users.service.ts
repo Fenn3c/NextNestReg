@@ -81,14 +81,14 @@ export class UsersService {
   }
 
   async login(userData: LoginUserDto) {
-    const { password, login } = userData
-    const user = await this.findByLogin(login)
+    const { password, email } = userData
+    const user = await this.findByEmail(email)
     if (!user)
-      throw new HttpException('Логин или пароль неверные', HttpStatus.UNAUTHORIZED)
+      throw new HttpException('Почта или пароль неверные', HttpStatus.UNAUTHORIZED)
 
     const checkPassword = await bcrypt.compare(password, user.password)
     if (!checkPassword)
-      throw new HttpException('Логин или пароль неверные', HttpStatus.UNAUTHORIZED)
+      throw new HttpException('Почта или пароль неверные', HttpStatus.UNAUTHORIZED)
 
 
     const payload: JwtPayloadType = {
