@@ -31,6 +31,8 @@ const getFirstError = (err: string[]) => {
 export default function () {
     const [formLoading, setFormLoading] = useState<boolean>(false)
     const [serverError, setServerError] = useState<string>('')
+    const { push } = useRouter()
+    
 
     const [
         emailValue,
@@ -72,7 +74,6 @@ export default function () {
             console.log(data)
             localStorage.setItem('accessToken', data.accessToken)
             setFormLoading(false)
-            const { push } = useRouter()
             push('/')
         } catch (e: unknown) {
             if (e instanceof AxiosError) {

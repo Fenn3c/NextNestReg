@@ -32,6 +32,8 @@ const getFirstError = (err: string[]) => {
 export default function () {
     const [formLoading, setFormLoading] = useState<boolean>(false)
     const [serverError, setServerError] = useState<string>('')
+    const { push } = useRouter()
+
 
     const [
         loginValue,
@@ -112,11 +114,11 @@ export default function () {
         try {
             const result = await register(loginValue, emailValue, passwordValue, passwordReapeatValue)
             setFormLoading(false)
-            const { push } = useRouter()
             push('/signin')
 
         } catch (e) {
             setServerError('Ошибка сервера. Обновите страницу.')
+            console.log(e)
             setFormLoading(false)
         }
     }
