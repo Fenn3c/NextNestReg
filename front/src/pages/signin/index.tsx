@@ -60,10 +60,13 @@ export default function () {
 
 
     const isLoading = formLoading;
+    const formDirty = emailDirty || passwordDirty
+
 
     const buttonActive =
         !Boolean(emailError.length)
         && !Boolean(passwordError.length)
+        && formDirty
 
 
 
