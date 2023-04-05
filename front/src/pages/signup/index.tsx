@@ -1,148 +1,112 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { loginValidator, passwordValidator, emailValidator } from '../../utils/validators'
+import useInput, { generateUseInputSettings } from '../../hooks/useInput'
+import axios from 'axios'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
 import Link from '../../components/Link'
-import useInput from '../../hooks/useInput'
-import { loginValidator, passwordValidator, emailValidator } from '../../utils/validators'
-import ReCaptcha from '../../components/ReCaptcha'
-import axios from 'axios'
-import { useLazyInput } from '@/hooks/useLazyInput'
 
 
-
-function debounce<F extends (...args: any[]) => void>(f: F, ms: number): (...args: Parameters<F>) => void {
-    let isCooldown = false;
-    return function (this: any, ...args: Parameters<F>) {
-        if (isCooldown) return;
-
-        f.apply(this, args);
-
-        isCooldown = true;
-
-        setTimeout(() => isCooldown = false, ms);
-    };
+export const DELAY = 500;
+const loginBlockClasses = `
+        text-slate-400 flex items-center 
+        text-center whitespace-nowrap mb-4
+        before:content-[""]
+        before:w-full
+        before:h-px
+        before:bg-slate-400
+        before:mr-2
+        after:content-[""]
+        after:w-full
+        after:h-px
+        after:bg-slate-400
+        after:ml-2
+`
+const getFirstError = (err:string[]) =>{
+    return err.length > 0 ? err[0] : ''
 }
 
 
 export default function () {
-
-    const [loginExists, setLoginExists] = useState(false)
-    const [emailExists, setEmailExists] = useState(false)
+    const [loginExists, setLoginExists] = useState(true)
+    const [emailExists, setEmailExists] = useState(true)
     const [serverError, setServerError] = useState(false)
-    const [buttonLoading, setButtonLoading] = useState(false)
+    // const [buttonLoading, setButtonLoading] = useState(false)
 
+    const getLogin = async (): Promise<string|undefined> => {
+        // setButtonLoading(true)
+        const {data} = await axios.post<{userExists: string}>('/users/login-exists', { "login": loginValue })
+        setLoginExists(Boolean(data.userExists))
+        return data.userExists
+    }
 
+    const getEmail = async (): Promise<string|undefined> => {
+        // setButtonLoading(true)
+        const {data} = await axios.post<{userExists: string | undefined}>('/users/email-exists', { "email": emailValue })
+        setLoginExists(Boolean(data.userExists))
+        return data.userExists
+    }
+
+    
     const [
         loginValue,
         loginError,
         loginDirty,
+        loginLoading,
         loginHandler
-    ] = useInput(loginValidator)
-
+    ] = useInput(generateUseInputSettings([loginValidator],[getLogin], DELAY))
+    
     const [
         emailValue,
         emailError,
         emailDirty,
+        emailLoading,
         emailHandler
-    ] = useInput(emailValidator)
-
+    ] = useInput(generateUseInputSettings([emailValidator],[getEmail], DELAY))
+   
 
     const [
         passwordValue,
         passwordError,
         passwordDirty,
+        passwordLoading,
         passwordHandler
-    ] = useInput(passwordValidator)
-
+    ] = useInput(generateUseInputSettings([passwordValidator], [] , DELAY))
+  
 
     const [
         passwordReapeatValue,
         passwordReapeatError,
         passwordReapeatDirty,
+        passwordRepeatLoading,
         passwordReapeatHandler
-    ] = useInput(passwordValidator)
+    ] = useInput(generateUseInputSettings([passwordValidator], [], DELAY))
 
-
-
-    useLazyInput({
-        callback: () => {
-            if (!loginError) {
-                setButtonLoading(true)
-                axios.post('/users/login-exists', { "login": loginValue }).then((res) => {
-                    console.log(res.data)
-                    setLoginExists(res.data.userExists)
-                }).catch(e => console.error(e)).finally(() => setButtonLoading(false))
-            } else {
-                setLoginExists(false)
-            }
-        },
-        dependenciesArray: [loginValue, loginError]
-    })
-
-    useLazyInput({
-        callback: () => {
-            if (!emailError) {
-                setButtonLoading(true)
-                axios.post('/users/email-exists', { "email": emailValue }).then((res) => {
-                    console.log(res.data)
-                    setEmailExists(res.data.emailExists)
-                }).catch(e => console.error(e)).finally(() => setButtonLoading(false))
-            } else {
-                setEmailExists(false)
-            }
-        },
-        dependenciesArray: [emailValue, emailError]
-    })
-
-    useEffect(() => {
-        if (!loginError) {
-            setButtonLoading(true)
-        } else {
-            setButtonLoading(false)
-        }
-    }, [loginValue, loginError])
-
-
-    useEffect(() => {
-        if (!emailError) {
-            setButtonLoading(true)
-        } else {
-            setButtonLoading(false)
-        }
-    }, [emailValue, emailError])
-
-
-    const loginErrorMessage = [
-        loginError,
-        loginExists ? ' Такой логин уже занят' : ''] // собираем все ошибки в массив. Но здесь не обязательно тк никогда не будет 2 ошибки одновременно
-
-    
-        const emailErrorMessage = [
-            emailError,
-            emailExists ? 'Такая почта уже занята' : ''] 
-
-
-
-
+    const isLoading = loginLoading  || emailLoading;
     const passwordsNotEqual = passwordValue !== passwordReapeatValue
-
     const buttonActive =
-        !Boolean(loginError)
-        && !Boolean(emailError)
-        && !Boolean(passwordError)
-        && !Boolean(passwordReapeatError)
+        !Boolean(loginError.join(' '))
+        && !Boolean(emailError.join(' '))
+        && !Boolean(passwordError.join(' '))
+        && !Boolean(passwordReapeatError.join(' '))
         && !passwordsNotEqual
         && !emailExists
         && !loginExists
 
-
     return (
         <div className='bg-slate-100 w-full h-screen flex justify-center items-center'>
             <div className=''>
-                <h1 className='text-4xl font-bold text-center mb-2'>Регистрация</h1>
-                <p className='text-center mb-6 text-slate-400'>Создайте аккаунт. <Link text='Уже есть аккаунт?' /></p>
+                <h1 className='text-4xl font-bold text-center mb-2'>
+                    Регистрация
+                </h1>
+                <p className='text-center mb-6 text-slate-400'>
+                    Создайте аккаунт. 
+                    <Link text='Уже есть аккаунт?' />
+                </p>
                 <div className='bg-white rounded-xl shadow py-8 px-10'>
-                    <p className='text-red-500 text-center'>ошибка сервера</p>
+                    {/* <p className='text-red-500 text-center'>
+                        ошибка сервера
+                    </p> */}
                     <Input
                         value={loginValue}
                         onChange={loginHandler}
@@ -150,14 +114,14 @@ export default function () {
                         label="Логин"
                         placeholder='Логин'
                         required
-                        errorText={loginErrorMessage.join(' ')}
-                        invalid={(Boolean(loginError) || loginExists) && loginDirty}
+                        errorText={getFirstError(loginError)}
+                        invalid={(Boolean(loginError[0]) || loginExists) && loginDirty}
                     />
                     <Input
                         value={emailValue}
                         onChange={emailHandler}
-                        errorText={emailErrorMessage.join(' ')}
-                        invalid={(Boolean(emailError) || emailExists) && emailDirty}
+                        errorText={emailError.join(' ')}
+                        invalid={(Boolean(emailError[0]) || emailExists) && emailDirty}
                         id="email"
                         label="Почта"
                         placeholder='Почта'
@@ -166,8 +130,8 @@ export default function () {
                     <Input
                         value={passwordValue}
                         onChange={passwordHandler}
-                        errorText={passwordError}
-                        invalid={Boolean(passwordError) && passwordDirty}
+                        errorText={passwordError.join(' ')}
+                        invalid={Boolean(passwordError.join(' ')) && passwordDirty}
                         id="password"
                         label="Пароль"
                         placeholder='Пароль'
@@ -179,7 +143,7 @@ export default function () {
                         onChange={passwordReapeatHandler}
                         // Выводим только проверку совпадения, чтобы не дублировать ошибки из пароля
                         errorText={passwordsNotEqual ? 'Пароли не совпадают' : ''}
-                        invalid={(Boolean(passwordReapeatError) || passwordsNotEqual) && passwordReapeatDirty}
+                        invalid={(Boolean(passwordReapeatError.join(' ')) || passwordsNotEqual) && passwordReapeatDirty}
                         id="repeat-password"
                         label="Повторите пароль"
                         placeholder='Повторите пароль'
@@ -192,21 +156,16 @@ export default function () {
                             onTokenFailed={() => console.warn('Токен не пришел')}
                             sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY ?? 'InvalidKey'} /> */}
                     </div>
-                    <Button className='w-full mt-4 mb-4' disabled={!buttonActive} loading={buttonLoading}>Зарегистрироваться</Button>
-                    <div className='text-slate-400 flex items-center text-center whitespace-nowrap mb-4
-                    before:content-[""]
-                    before:w-full
-                    before:h-px
-                    before:bg-slate-400
-                    before:mr-2
-                    after:content-[""]
-                    after:w-full
-                    after:h-px
-                    after:bg-slate-400
-                    after:ml-2
-                    '>Войти с помощью</div>
+                    <Button className='w-full mt-4 mb-4' 
+                        disabled={!buttonActive}  
+                        loading={isLoading} 
+                    >
+                        Зарегистрироваться
+                    </Button>
+                    <div className={loginBlockClasses}>
+                        Войти с помощью
+                    </div>
                     <div className="flex justify-between gap-3">
-
                         <Button className='border bg-slate-50 hover:bg-slate-100 focus:bg-slate-100 w-full'>
                             <svg className='fill-slate-500' width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M15.073 2H8.937C3.333 2 2 3.333 2 8.927V15.063C2 20.666 3.323 22 8.927 22H15.063C20.666 22 22 20.677 22 15.073V8.937C22 3.333 20.677 2 15.073 2ZM18.146 16.27H16.687C16.135 16.27 15.969 15.823 14.979 14.833C14.115 14 13.75 13.896 13.531 13.896C13.229 13.896 13.146 13.979 13.146 14.396V15.708C13.146 16.063 13.031 16.271 12.104 16.271C11.2043 16.2105 10.3319 15.9372 9.5586 15.4735C8.78527 15.0098 8.13317 14.3691 7.656 13.604C6.52317 12.194 5.73494 10.5391 5.354 8.771C5.354 8.552 5.437 8.354 5.854 8.354H7.312C7.687 8.354 7.822 8.521 7.969 8.906C8.677 10.99 9.885 12.802 10.375 12.802C10.563 12.802 10.645 12.719 10.645 12.25V10.104C10.583 9.125 10.063 9.042 10.063 8.688C10.0697 8.59463 10.1125 8.50753 10.1823 8.44518C10.2521 8.38283 10.3435 8.35012 10.437 8.354H12.729C13.042 8.354 13.146 8.51 13.146 8.885V11.781C13.146 12.094 13.281 12.198 13.375 12.198C13.563 12.198 13.708 12.094 14.052 11.75C14.7909 10.8489 15.3945 9.84508 15.844 8.77C15.8899 8.64086 15.9769 8.5303 16.0915 8.45519C16.2062 8.38008 16.3423 8.34454 16.479 8.354H17.938C18.375 8.354 18.468 8.573 18.375 8.885C17.8445 10.0734 17.1881 11.2015 16.417 12.25C16.26 12.49 16.197 12.615 16.417 12.896C16.562 13.115 17.073 13.542 17.417 13.948C17.9169 14.4466 18.332 15.0236 18.646 15.656C18.771 16.062 18.562 16.27 18.146 16.27Z" />
