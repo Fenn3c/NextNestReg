@@ -4,7 +4,7 @@ import useInput, { generateUseInputSettings } from '../../hooks/useInput'
 import axios, { AxiosError } from 'axios'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
-import { login, register } from '@/apiMethods/user'
+import { signIn } from '@/apiMethods/user'
 import A from '@/components/Link'
 import { redirect, useRouter } from 'next/navigation'
 
@@ -32,7 +32,7 @@ export default function () {
     const [formLoading, setFormLoading] = useState<boolean>(false)
     const [serverError, setServerError] = useState<string>('')
     const { push } = useRouter()
-    
+
 
     const [
         emailValue,
@@ -73,7 +73,7 @@ export default function () {
     const submitHandler = async () => {
         setFormLoading(true)
         try {
-            const { data } = await login(emailValue, passwordValue)
+            const { data } = await signIn(emailValue, passwordValue)
             console.log(data)
             localStorage.setItem('accessToken', data.accessToken)
             setFormLoading(false)

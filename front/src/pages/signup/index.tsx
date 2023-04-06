@@ -4,7 +4,7 @@ import useInput, { generateUseInputSettings } from '../../hooks/useInput'
 import axios from 'axios'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
-import { register } from '@/apiMethods/user'
+import { signUp } from '@/apiMethods/user'
 import A from '@/components/Link'
 import { redirect, useRouter } from 'next/navigation'
 
@@ -112,7 +112,7 @@ export default function () {
     const submitHandler = async () => {
         setFormLoading(true)
         try {
-            const result = await register(loginValue, emailValue, passwordValue, passwordReapeatValue)
+            const result = await signUp(loginValue, emailValue, passwordValue, passwordReapeatValue)
             setFormLoading(false)
             push('/signin')
 
