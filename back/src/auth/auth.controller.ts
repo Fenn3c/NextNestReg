@@ -19,7 +19,7 @@ export class AuthController {
     @UseGuards(AuthGuard)
     @Get('profile')
     getProfile(@Req() req) {
-      return 'РАБОТАЕТ';
+      return `ID пользователя: ${req.user.sub}`;
     }
 
 

@@ -8,10 +8,7 @@ import { User } from 'src/users/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
 
-type JwtPayloadType = {
-    login: string,
-    sub: number
-}
+
 
 @Injectable()
 export class AuthService {
