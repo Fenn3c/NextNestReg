@@ -3,7 +3,7 @@ import {
     MinLength, MaxLength, IsStrongPassword, Equals, Matches
 } from 'class-validator'
 
-export class LoginUserDto{
+export class SignInUserDto{
     @IsEmail()
     email: string;
 
